@@ -61,113 +61,129 @@
 </div>
 
 <script>
-    // 1. CONFIGURACIÓN (REEMPLAZA ESTOS DATOS)
-    const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
-    const SUPABASE_KEY = 'TU_ANON_KEY';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+   // 1. CONFIGURACIÓN (REEMPLAZA ESTOS DATOS)
+const SUPABASE_URL = 'https://lddajpesoctuzlhjrpyg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Ap9YMNrnBaD5Bluj38sWpQ_36j9QWm7';
 
-    let isRegistering = false;
+// CAMBIO AQUÍ: Usamos un nombre distinto para evitar el SyntaxError
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // 2. FUNCIONES DE AUTENTICACIÓN
-    async function handleAuth() {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const btn = document.getElementById('btn-auth');
-        
-        btn.disabled = true;
-        btn.innerText = "Procesando...";
+let isRegistering = false;
 
-        try {
-            if (isRegistering) {
-                const { error } = await supabase.auth.signUp({ email, password });
-                if (error) throw error;
-                alert("¡Registro exitoso! Revisa tu email para confirmar.");
-            } else {
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) throw error;
-                checkUser();
-            }
-        } catch (err) {
-            alert("Error: " + err.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerText = isRegistering ? "Registrarse" : "Entrar";
+// 2. FUNCIONES DE INTERFAZ (Deben estar definidas antes de usarse)
+window.toggleAuth = function() {
+    isRegistering = !isRegistering;
+    document.getElementById('auth-title').innerText = isRegistering ? "Crear Cuenta" : "Iniciar Sesión";
+    document.getElementById('btn-auth').innerText = isRegistering ? "Registrarse" : "Entrar";
+    document.getElementById('toggle-text').innerText = isRegistering ? "¿Ya tienes cuenta? Entra" : "¿No tienes cuenta? Regístrate";
+};
+
+// 3. FUNCIONES DE AUTENTICACIÓN
+window.handleAuth = async function() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('btn-auth');
+    
+    if(!email || !password) return alert("Completa todos los campos");
+
+    btn.disabled = true;
+    btn.innerText = "Procesando...";
+
+    try {
+        if (isRegistering) {
+            const { error } = await _supabase.auth.signUp({ email, password });
+            if (error) throw error;
+            alert("¡Registro enviado! Revisa tu email para confirmar tu cuenta.");
+        } else {
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) throw error;
+            checkUser();
         }
+    } catch (err) {
+        alert("Error: " + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = isRegistering ? "Registrarse" : "Entrar";
     }
+};
 
-    async function resetPass() {
-        const email = document.getElementById('email').value;
-        if (!email) return alert("Escribe tu email primero");
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
-        alert(error ? error.message : "Email de recuperación enviado.");
+window.resetPass = async function() {
+    const email = document.getElementById('email').value;
+    if (!email) return alert("Escribe tu email primero en el campo de arriba");
+    const { error } = await _supabase.auth.resetPasswordForEmail(email);
+    alert(error ? error.message : "Email de recuperación enviado. Revisa tu bandeja.");
+};
+
+// 4. LOGICA DE NEGOCIO (OKRS)
+window.saveOKR = async function() {
+    const { data: { user } } = await _supabase.auth.getUser();
+    const obj = {
+        user_id: user.id,
+        objetivo: document.getElementById('obj-input').value,
+        kr1: document.getElementById('kr1-input').value,
+        kr2: document.getElementById('kr2-input').value,
+        kr3: document.getElementById('kr3-input').value
+    };
+
+    if(!obj.objetivo) return alert("El objetivo es obligatorio");
+
+    const { error: err } = await _supabase.from('okrs').insert([obj]);
+
+    if (err) {
+        alert("Error al guardar: " + err.message);
+    } else {
+        alert("¡OKR Guardado correctamente!");
+        loadOKRs();
+        // Limpiar campos
+        document.getElementById('obj-input').value = "";
+        document.getElementById('kr1-input').value = "";
+        document.getElementById('kr2-input').value = "";
+        document.getElementById('kr3-input').value = "";
     }
+};
 
-    // 3. LOGICA DE NEGOCIO (OKRS)
-    async function saveOKR() {
-        const { data: { user } } = await supabase.auth.getUser();
-        const obj = {
-            user_id: user.id,
-            objetivo: document.getElementById('obj-input').value,
-            kr1: document.getElementById('kr1-input').value,
-            kr2: document.getElementById('kr2-input').value,
-            kr3: document.getElementById('kr3-input').value
-        };
-
-        const { error } = await supabase.insert('okrs').values([obj]); // NOTA: En v2 es .insert(obj)
-        // Corrección de sintaxis para Supabase JS v2:
-        const { error: err } = await supabase.from('okrs').insert([obj]);
-
-        if (err) alert(err.message);
-        else {
-            alert("OKR Guardado");
-            loadOKRs();
-            document.querySelectorAll('#app-section input').forEach(i => i.value = "");
-        }
+window.loadOKRs = async function() {
+    const container = document.getElementById('list-okr');
+    const { data, error } = await _supabase.from('okrs').select('*').order('created_at', { ascending: false });
+    
+    if (error) {
+        console.error(error);
+        container.innerHTML = "Error al cargar datos.";
+        return;
     }
+    
+    container.innerHTML = data.length ? "" : "No tienes OKRs registrados aún.";
+    
+    data.forEach(item => {
+        container.innerHTML += `
+            <div class="okr-item" style="background:#fff; padding:15px; margin-bottom:10px; border-radius:5px; border-left:5px solid #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,0.1)">
+                <strong style="font-size:1.1rem">🎯 ${item.objetivo}</strong>
+                <p style="margin:5px 0"><strong>KR1:</strong> ${item.kr1 || '-'}</p>
+                <p style="margin:5px 0"><strong>KR2:</strong> ${item.kr2 || '-'}</p>
+                <p style="margin:5px 0"><strong>KR3:</strong> ${item.kr3 || '-'}</p>
+            </div>
+        `;
+    });
+};
 
-    async function loadOKRs() {
-        const { data, error } = await supabase.from('okrs').select('*').order('created_at', { ascending: false });
-        if (error) return console.error(error);
-        
-        const container = document.getElementById('list-okr');
-        container.innerHTML = data.length ? "" : "No tienes OKRs aún.";
-        
-        data.forEach(item => {
-            container.innerHTML += `
-                <div class="okr-item">
-                    <strong>🎯 ${item.objetivo}</strong>
-                    <p>1. ${item.kr1}</p>
-                    <p>2. ${item.kr2}</p>
-                    <p>3. ${item.kr3}</p>
-                </div>
-            `;
-        });
+// 5. CONTROL DE SESIÓN
+window.checkUser = async function() {
+    const { data: { session } } = await _supabase.auth.getSession();
+    if (session) {
+        document.getElementById('auth-section').classList.add('hidden');
+        document.getElementById('app-section').classList.remove('hidden');
+        document.getElementById('nav-user').classList.remove('hidden');
+        loadOKRs();
     }
+};
 
-    // 4. CONTROL DE FLUJO
-    function toggleAuth() {
-        isRegistering = !isRegistering;
-        document.getElementById('auth-title').innerText = isRegistering ? "Crear Cuenta" : "Iniciar Sesión";
-        document.getElementById('btn-auth').innerText = isRegistering ? "Registrarse" : "Entrar";
-        document.getElementById('toggle-text').innerText = isRegistering ? "¿Ya tienes cuenta? Entra" : "¿No tienes cuenta? Regístrate";
-    }
+window.logout = async function() {
+    await _supabase.auth.signOut();
+    window.location.reload();
+};
 
-    async function checkUser() {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('app-section').classList.remove('hidden');
-            document.getElementById('nav-user').classList.remove('hidden');
-            loadOKRs();
-        }
-    }
-
-    async function logout() {
-        await supabase.auth.signOut();
-        window.location.reload();
-    }
-
-    window.onload = checkUser;
+// Ejecutar al cargar la página
+document.addEventListener('DOMContentLoaded', checkUser);
 </script>
 </body>
 </html>
