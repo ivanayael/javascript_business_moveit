@@ -3,130 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Move It - OKR Master</title>
+    <title>Move It OKR Master</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --p: #2563eb; --bg: #f8fafc; --txt: #1e293b; }
-        body { font-family: 'Segoe UI', system-ui; margin: 0; background: var(--bg); color: var(--txt); }
-        nav { background: var(--txt); color: white; padding: 1rem; display: flex; justify-content: space-between; }
-        .container { max-width: 800px; margin: 2rem auto; padding: 1rem; }
-        .card { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 1rem; }
-        input { width: 100%; padding: 0.8rem; margin: 0.5rem 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .btn { background: var(--p); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        :root { --p: #2563eb; --bg: #f1f5f9; --txt: #0f172a; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding-bottom: 50px; }
+        nav { background: #1e293b; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 600px; margin: 20px auto; padding: 0 15px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn { background: var(--p); color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+        .btn:disabled { background: #94a3b8; }
         .hidden { display: none; }
-        .nav-links a { color: white; margin-left: 1rem; text-decoration: none; cursor: pointer; }
+        .okr-item { border-left: 5px solid var(--p); padding-left: 15px; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .legal-link { font-size: 0.8rem; color: #64748b; text-decoration: none; margin-right: 10px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <strong>🚀 Move It OKRs</strong>
-    <div class="nav-links">
-        <a onclick="showSection('section-tips')">Tips OKR</a>
-        <a onclick="showSection('section-about')">Sobre Mí</a>
-        <a id="logout-btn" class="hidden" onclick="logout()">Cerrar Sesión</a>
+    <strong>🚀 Move It</strong>
+    <div id="nav-user" class="hidden">
+        <button onclick="logout()" style="background:none; border:1px solid white; color:white; cursor:pointer; border-radius:4px;">Salir</button>
     </div>
 </nav>
 
 <div class="container">
-    <section id="section-auth" class="card">
+    <section id="auth-section" class="card">
         <h2 id="auth-title">Iniciar Sesión</h2>
-        <input type="email" id="email" placeholder="Tu email">
-        <input type="password" id="password" placeholder="Tu contraseña">
-        <button class="btn" onclick="handleAuth()" id="auth-main-btn">Entrar</button>
-        <p style="text-align:center; font-size: 0.9rem;">
-            <a onclick="toggleAuthMode()" id="auth-toggle">¿No tienes cuenta? Regístrate</a><br><br>
-            <a onclick="resetPassword()" style="color: grey;">Olvidé mi contraseña</a>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Contraseña">
+        <button id="btn-auth" class="btn" onclick="handleAuth()">Entrar</button>
+        <p style="text-align:center">
+            <a href="javascript:void(0)" onclick="toggleAuth()" id="toggle-text">¿No tienes cuenta? Regístrate</a>
         </p>
+        <p style="text-align:center"><a href="javascript:void(0)" onclick="resetPass()" style="font-size:0.8rem">Olvidé mi contraseña</a></p>
     </section>
 
-    <section id="section-app" class="hidden">
-        <h1>Mis OKRs Anuales</h1>
-        <div id="okr-container">
-            <div class="card">
-                <h3>Objetivo: [Nombre del Objetivo]</h3>
-                <p>• KR1: Métrica 1</p>
-                <p>• KR2: Métrica 2</p>
-                <p>• KR3: Métrica 3</p>
-            </div>
+    <section id="app-section" class="hidden">
+        <div class="card">
+            <h3>+ Nuevo Objetivo Anual</h3>
+            <input type="text" id="obj-input" placeholder="Ej: Mejorar transporte en Wonder City">
+            <input type="text" id="kr1-input" placeholder="KR 1 (Métrica)">
+            <input type="text" id="kr2-input" placeholder="KR 2 (Métrica)">
+            <input type="text" id="kr3-input" placeholder="KR 3 (Métrica)">
+            <button class="btn" onclick="saveOKR()">Guardar OKR</button>
         </div>
+
+        <h2>Mis OKRs</h2>
+        <div id="list-okr">Cargando tus metas...</div>
     </section>
 
-    <section id="section-tips" class="hidden card">
-        <h2>Tips para OKRs Reales</h2>
-        <ul>
-            <li><strong>Verbo de impacto:</strong> No uses "Hacer", usa "Aumentar", "Disminuir" o "Lograr".</li>
-            <li><strong>La prueba del viernes:</strong> Si el viernes no puedes medir si avanzaste un número, no es un KR.</li>
-            <li><strong>Menos es más:</strong> 4 objetivos es el límite físico para que un equipo mantenga el foco.</li>
-        </ul>
-        <button class="btn" onclick="showSection('section-app')">Volver al Panel</button>
-    </section>
-
-    <section id="section-about" class="hidden card">
-        <h2>Sobre el Proyecto Move It</h2>
-        <p>Este sistema está diseñado para durar. Utiliza tecnologías estándar que no dependen de servidores propietarios frágiles.</p>
-        <button class="btn" onclick="showSection('section-app')">Volver al Panel</button>
-    </section>
+    <div style="text-align:center; margin-top:40px;">
+        <a href="#" class="legal-link">Aviso Legal</a>
+        <a href="#" class="legal-link">Privacidad</a>
+    </div>
 </div>
 
 <script>
-    // CONFIGURACIÓN SUPABASE (Reemplaza con tus llaves)
-    const SUPABASE_URL = 'https://lddajpesoctuzlhjrpyg.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_Ap9YMNrnBaD5Bluj38sWpQ_36j9QWm7';
+    // 1. CONFIGURACIÓN (REEMPLAZA ESTOS DATOS)
+    const SUPABASE_URL = 'https://TU_PROYECTO.supabase.co';
+    const SUPABASE_KEY = 'TU_ANON_KEY';
     const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let isSignUp = false;
+    let isRegistering = false;
 
-    // Manejo de Interfaz
-    function showSection(id) {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden');
-    }
-
-    function toggleAuthMode() {
-        isSignUp = !isSignUp;
-        document.getElementById('auth-title').innerText = isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión';
-        document.getElementById('auth-main-btn').innerText = isSignUp ? 'Registrarse' : 'Entrar';
-        document.getElementById('auth-toggle').innerText = isSignUp ? '¿Ya tienes cuenta? Entra' : '¿No tienes cuenta? Regístrate';
-    }
-
-    // Lógica de Autenticación
+    // 2. FUNCIONES DE AUTENTICACIÓN
     async function handleAuth() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const btn = document.getElementById('btn-auth');
+        
+        btn.disabled = true;
+        btn.innerText = "Procesando...";
 
-        if (isSignUp) {
-            const { error } = await supabase.auth.signUp({ email, password });
-            if (error) alert(error.message); else alert('Revisa tu email para confirmar tu cuenta');
-        } else {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) alert(error.message); else checkUser();
+        try {
+            if (isRegistering) {
+                const { error } = await supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                alert("¡Registro exitoso! Revisa tu email para confirmar.");
+            } else {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                checkUser();
+            }
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = isRegistering ? "Registrarse" : "Entrar";
+        }
+    }
+
+    async function resetPass() {
+        const email = document.getElementById('email').value;
+        if (!email) return alert("Escribe tu email primero");
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        alert(error ? error.message : "Email de recuperación enviado.");
+    }
+
+    // 3. LOGICA DE NEGOCIO (OKRS)
+    async function saveOKR() {
+        const { data: { user } } = await supabase.auth.getUser();
+        const obj = {
+            user_id: user.id,
+            objetivo: document.getElementById('obj-input').value,
+            kr1: document.getElementById('kr1-input').value,
+            kr2: document.getElementById('kr2-input').value,
+            kr3: document.getElementById('kr3-input').value
+        };
+
+        const { error } = await supabase.insert('okrs').values([obj]); // NOTA: En v2 es .insert(obj)
+        // Corrección de sintaxis para Supabase JS v2:
+        const { error: err } = await supabase.from('okrs').insert([obj]);
+
+        if (err) alert(err.message);
+        else {
+            alert("OKR Guardado");
+            loadOKRs();
+            document.querySelectorAll('#app-section input').forEach(i => i.value = "");
+        }
+    }
+
+    async function loadOKRs() {
+        const { data, error } = await supabase.from('okrs').select('*').order('created_at', { ascending: false });
+        if (error) return console.error(error);
+        
+        const container = document.getElementById('list-okr');
+        container.innerHTML = data.length ? "" : "No tienes OKRs aún.";
+        
+        data.forEach(item => {
+            container.innerHTML += `
+                <div class="okr-item">
+                    <strong>🎯 ${item.objetivo}</strong>
+                    <p>1. ${item.kr1}</p>
+                    <p>2. ${item.kr2}</p>
+                    <p>3. ${item.kr3}</p>
+                </div>
+            `;
+        });
+    }
+
+    // 4. CONTROL DE FLUJO
+    function toggleAuth() {
+        isRegistering = !isRegistering;
+        document.getElementById('auth-title').innerText = isRegistering ? "Crear Cuenta" : "Iniciar Sesión";
+        document.getElementById('btn-auth').innerText = isRegistering ? "Registrarse" : "Entrar";
+        document.getElementById('toggle-text').innerText = isRegistering ? "¿Ya tienes cuenta? Entra" : "¿No tienes cuenta? Regístrate";
+    }
+
+    async function checkUser() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('app-section').classList.remove('hidden');
+            document.getElementById('nav-user').classList.remove('hidden');
+            loadOKRs();
         }
     }
 
     async function logout() {
         await supabase.auth.signOut();
-        location.reload();
+        window.location.reload();
     }
 
-    async function resetPassword() {
-        const email = prompt("Ingresa tu email para recuperar contraseña:");
-        if (email) {
-            const { error } = await supabase.auth.resetPasswordForEmail(email);
-            if (error) alert(error.message); else alert("Correo de recuperación enviado.");
-        }
-    }
-
-    async function checkUser() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            showSection('section-app');
-            document.getElementById('logout-btn').classList.remove('hidden');
-            document.getElementById('section-auth').classList.add('hidden');
-        }
-    }
-
-    checkUser();
+    window.onload = checkUser;
 </script>
 </body>
 </html>
