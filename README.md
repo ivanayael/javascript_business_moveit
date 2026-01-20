@@ -58,11 +58,6 @@ A continuación, un fragmento de cómo están organizados los días en el HTML:
 
 ¡Las contribuciones son bienvenidas! Si tienes una idea o encuentras un problema, por favor abre un issue o envía un pull request.
 
-## Licencia
-
-Este proyecto está bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles.
-Contacto
-
 Si tienes alguna pregunta o sugerencia, no dudes en contactarme.
 
 
