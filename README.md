@@ -1,4 +1,4 @@
-# Move IT - Agile KPI Automator 🚀
+# Plena Inclusión - Move IT - Agile KPI Automator 🚀
 
 Este proyecto nace de la necesidad de automatizar el seguimiento de KPIs en proyectos de gran escala. Como **Project Manager e Ingeniera en Sistemas**, he utilizado esta lógica para gestionar equipos de +50 personas y asegurar el cumplimiento de hitos críticos.
 
